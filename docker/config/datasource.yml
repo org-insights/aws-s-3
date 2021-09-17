@@ -1,0 +1,5 @@
+# config file version
+apiVersion: 1
+datasources:
+  - name: aws-s3
+    type: orginsights-s3-datasource

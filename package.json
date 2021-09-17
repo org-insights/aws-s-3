@@ -1,5 +1,5 @@
 {
-  "name": "org-insights-aws-s-3",
+  "name": "orginsights-s3-datasource",
   "version": "1.0.0",
   "description": "S3 data analysis",
   "scripts": {

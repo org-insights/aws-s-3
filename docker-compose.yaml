@@ -6,10 +6,11 @@ services:
     - GF_AUTH_ANONYMOUS_ENABLED=true
     - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
     - GF_PATHS_PLUGINS=/var/lib/grafana/plugins
-    - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=org-insights-aws-s-3
+    - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=orginsights-s3-datasource
     - GF_PLUGINS_ENABLE_ALPHA=true
     volumes:
     - /Users/itay/private/plugins:/var/lib/grafana/plugins
+    - ./docker/config/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml
     ports:
     - "3000:3000"
   minio-init:
