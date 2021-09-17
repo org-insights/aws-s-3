@@ -11,6 +11,11 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/live"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
 // Make sure SampleDatasource implements required interfaces. This is important to do
@@ -31,12 +36,37 @@ var (
 
 // NewSampleDatasource creates a new datasource instance.
 func NewSampleDatasource(_ backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
-	return &SampleDatasource{}, nil
+	customResolver := aws.EndpointResolverFunc(func(service, region string) (aws.Endpoint, error) {
+		return aws.Endpoint{
+			URL:               "http://minio:9000",
+			HostnameImmutable: true,
+		}, nil
+	})
+
+	// Load the Shared AWS Configuration (~/.aws/config)
+	cfg, err := config.LoadDefaultConfig(
+		context.TODO(),
+		config.WithEndpointResolver(customResolver),
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider("minioadmin", "minioadmin", "minioadmin")))
+	if err != nil {
+		log.DefaultLogger.Error("NewSampleDatasource called", "err", err)
+	}
+
+	log.DefaultLogger.Info("Create an Amazon S3 service client")
+	// Create an Amazon S3 service client
+	client := s3.NewFromConfig(cfg)
+	log.DefaultLogger.Info("Amazon S3 service client created successfully")
+
+	return &SampleDatasource{
+		client: client,
+	}, nil
 }
 
 // SampleDatasource is an example datasource which can respond to data queries, reports
 // its health and has streaming skills.
-type SampleDatasource struct{}
+type SampleDatasource struct {
+	client *s3.Client
+}
 
 // Dispose here tells plugin SDK that plugin wants to clean up resources when a new instance
 // created. As soon as datasource settings change detected by SDK old datasource instance will
@@ -67,6 +97,26 @@ func (d *SampleDatasource) QueryData(ctx context.Context, req *backend.QueryData
 	return response, nil
 }
 
+func getPartitionSize(client *s3.Client, bucket string, prefix string) int64 {
+	// TODO: pagination support, currently limited to 1,000 keys per call
+	log.DefaultLogger.Info("getPartitionSize called")
+	size := int64(0)
+	output, err := client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
+		Bucket: aws.String(bucket),
+		Prefix: aws.String(prefix),
+	})
+	if err != nil {
+		log.DefaultLogger.Error("getPartitionSize called", "err", err)
+	}
+
+	for _, object := range output.Contents {
+		log.DefaultLogger.Info("getPartitionSize called", "key", aws.ToString(object.Key), "size", object.Size)
+		size += object.Size
+	}
+
+	return size
+}
+
 type queryModel struct {
 	WithStreaming bool `json:"withStreaming"`
 }
@@ -85,10 +135,31 @@ func (d *SampleDatasource) query(_ context.Context, pCtx backend.PluginContext, 
 	// create data frame response.
 	frame := data.NewFrame("response")
 
+	current := query.TimeRange.From
+	// numOfFields := int(query.TimeRange.To.Sub(query.TimeRange.From).Hours() / 24)
+	times := []time.Time{}
+	values := []int64{}
+
+	layout := "2006-01-02" // yyyy-mm-dd
+
+	for query.TimeRange.To.After(current) {
+		currentRoundStringTime := current.Format(layout)
+		currentRoundTime, err := time.Parse(layout, currentRoundStringTime)
+		if err != nil {
+			log.DefaultLogger.Error("%s", err)
+		}
+		date := currentRoundTime.Format(layout)
+		size := getPartitionSize(d.client, "my-bucket", "client=1000/date="+date)
+		log.DefaultLogger.Info("S3 object info", "time", currentRoundTime.Format(layout), "size", size)
+		times = append(times, current)
+		values = append(values, size)
+		current = current.Add(24 * time.Hour)
+	}
+
 	// add fields.
 	frame.Fields = append(frame.Fields,
-		data.NewField("time", nil, []time.Time{query.TimeRange.From, query.TimeRange.To}),
-		data.NewField("values", nil, []int64{10, 20}),
+		data.NewField("time", nil, times),
+		data.NewField("values", nil, values),
 	)
 
 	// If query called with streaming on then return a channel
