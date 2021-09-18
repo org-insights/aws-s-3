@@ -19,6 +19,15 @@ export class ConfigEditor extends PureComponent<Props, State> {
     onOptionsChange({ ...options, jsonData });
   };
 
+  onEndpointChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { onOptionsChange, options } = this.props;
+    const jsonData = {
+      ...options.jsonData,
+      endpoint: event.target.value,
+    };
+    onOptionsChange({ ...options, jsonData });
+  };
+
   // Secure field (only sent to the backend)
   onAPIKeyChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { onOptionsChange, options } = this.props;
@@ -52,6 +61,17 @@ export class ConfigEditor extends PureComponent<Props, State> {
 
     return (
       <div className="gf-form-group">
+        <div className="gf-form">
+          <FormField
+            label="Endpoint"
+            labelWidth={6}
+            inputWidth={20}
+            onChange={this.onEndpointChange}
+            value={jsonData.endpoint || ''}
+            placeholder="URL endpoint to make API calls to"
+          />
+        </div>
+
         <div className="gf-form">
           <FormField
             label="Path"

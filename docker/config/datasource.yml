@@ -3,3 +3,5 @@ apiVersion: 1
 datasources:
   - name: aws-s3
     type: orginsights-s3-datasource
+    jsonData:
+      endpoint: http://minio:9000

@@ -35,10 +35,21 @@ var (
 )
 
 // NewSampleDatasource creates a new datasource instance.
-func NewSampleDatasource(_ backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
+func NewSampleDatasource(settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
+	type dataSourceConfig struct {
+        Endpoint string `json:"endpoint"`
+    }
+    var dsConfig dataSourceConfig
+    err := json.Unmarshal(settings.JSONData, &dsConfig)
+    if err != nil {
+        log.DefaultLogger.Warn("error marshalling", "err", err)
+        return nil, err
+    }
+    log.DefaultLogger.Info("looking for endpoint", "endpoint", dsConfig.Endpoint)
+	
 	customResolver := aws.EndpointResolverFunc(func(service, region string) (aws.Endpoint, error) {
 		return aws.Endpoint{
-			URL:               "http://minio:9000",
+			URL:               dsConfig.Endpoint,
 			HostnameImmutable: true,
 		}, nil
 	})
@@ -118,6 +129,7 @@ func getPartitionSize(client *s3.Client, bucket string, prefix string) int64 {
 }
 
 type queryModel struct {
+	Endpoint string `json:"endpoint"`
 	WithStreaming bool `json:"withStreaming"`
 }
 
