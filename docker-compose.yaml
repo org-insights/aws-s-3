@@ -11,6 +11,8 @@ services:
     volumes:
     - /Users/itay/private/plugins:/var/lib/grafana/plugins
     - ./docker/config/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml
+    - ./docker/config/dashboard.yml:/etc/grafana/provisioning/dashboards/dashboard.yml
+    - ./docker/config/dashboard.json:/etc/grafana/provisioning/dashboards/dashboard.json
     ports:
     - "3000:3000"
   minio-init:
