@@ -37,16 +37,16 @@ var (
 // NewSampleDatasource creates a new datasource instance.
 func NewSampleDatasource(settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
 	type dataSourceConfig struct {
-        Endpoint string `json:"endpoint"`
-    }
-    var dsConfig dataSourceConfig
-    err := json.Unmarshal(settings.JSONData, &dsConfig)
-    if err != nil {
-        log.DefaultLogger.Warn("error marshalling", "err", err)
-        return nil, err
-    }
-    log.DefaultLogger.Info("looking for endpoint", "endpoint", dsConfig.Endpoint)
-	
+		Endpoint string `json:"endpoint"`
+	}
+	var dsConfig dataSourceConfig
+	err := json.Unmarshal(settings.JSONData, &dsConfig)
+	if err != nil {
+		log.DefaultLogger.Warn("error marshalling", "err", err)
+		return nil, err
+	}
+	log.DefaultLogger.Info("looking for endpoint", "endpoint", dsConfig.Endpoint)
+
 	customResolver := aws.EndpointResolverFunc(func(service, region string) (aws.Endpoint, error) {
 		return aws.Endpoint{
 			URL:               dsConfig.Endpoint,
@@ -129,8 +129,9 @@ func getPartitionSize(client *s3.Client, bucket string, prefix string) int64 {
 }
 
 type queryModel struct {
-	Endpoint string `json:"endpoint"`
-	WithStreaming bool `json:"withStreaming"`
+	Endpoint      string `json:"endpoint"`
+	Prefix        string `json:"prefix"`
+	WithStreaming bool   `json:"withStreaming"`
 }
 
 func (d *SampleDatasource) query(_ context.Context, pCtx backend.PluginContext, query backend.DataQuery) backend.DataResponse {
@@ -161,7 +162,7 @@ func (d *SampleDatasource) query(_ context.Context, pCtx backend.PluginContext, 
 			log.DefaultLogger.Error("%s", err)
 		}
 		date := currentRoundTime.Format(layout)
-		size := getPartitionSize(d.client, "my-bucket", "client=1000/date="+date)
+		size := getPartitionSize(d.client, "my-bucket", qm.Prefix+date)
 		log.DefaultLogger.Info("S3 object info", "time", currentRoundTime.Format(layout), "size", size)
 		times = append(times, current)
 		values = append(values, size)
