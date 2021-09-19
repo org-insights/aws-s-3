@@ -3,16 +3,11 @@ import { DataQuery, DataSourceJsonData } from '@grafana/data';
 export interface MyQuery extends DataQuery {
   bucket?: string;
   prefix: string;
-  queryText?: string;
-  constant: number;
-  withStreaming: boolean;
 }
 
 export const defaultQuery: Partial<MyQuery> = {
   bucket: '',
   prefix: '/',
-  constant: 6.5,
-  withStreaming: false,
 };
 
 /**
