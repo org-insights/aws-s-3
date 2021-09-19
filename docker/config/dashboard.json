@@ -95,6 +95,7 @@
       },
       "targets": [
         {
+          "bucket": "my-bucket",
           "constant": 6.5,
           "prefix": "client=1000/date=",
           "refId": "A",

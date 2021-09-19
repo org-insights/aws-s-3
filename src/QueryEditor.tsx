@@ -11,6 +11,11 @@ const { FormField, Switch } = LegacyForms;
 type Props = QueryEditorProps<DataSource, MyQuery, MyDataSourceOptions>;
 
 export class QueryEditor extends PureComponent<Props> {
+  onBucketChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { onChange, query } = this.props;
+    onChange({ ...query, bucket: event.target.value });
+  };
+
   onPrefixChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { onChange, query } = this.props;
     onChange({ ...query, prefix: event.target.value });
@@ -37,12 +42,13 @@ export class QueryEditor extends PureComponent<Props> {
 
   render() {
     const query = defaults(this.props.query, defaultQuery);
-    const { prefix, queryText, constant, withStreaming } = query;
+    const { bucket, prefix, queryText, constant, withStreaming } = query;
 
     return (
       <div className="gf-form">
+        <FormField width={4} value={bucket} onChange={this.onBucketChange} label="Bucket" tooltip="Bucket name" />
         <FormField
-          width={4}
+          width={6}
           value={prefix}
           onChange={this.onPrefixChange}
           label="Prefix"

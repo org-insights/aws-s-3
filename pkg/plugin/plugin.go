@@ -130,6 +130,7 @@ func getPartitionSize(client *s3.Client, bucket string, prefix string) int64 {
 
 type queryModel struct {
 	Endpoint      string `json:"endpoint"`
+	Bucket        string `json:"bucket"`
 	Prefix        string `json:"prefix"`
 	WithStreaming bool   `json:"withStreaming"`
 }
@@ -162,7 +163,7 @@ func (d *SampleDatasource) query(_ context.Context, pCtx backend.PluginContext, 
 			log.DefaultLogger.Error("%s", err)
 		}
 		date := currentRoundTime.Format(layout)
-		size := getPartitionSize(d.client, "my-bucket", qm.Prefix+date)
+		size := getPartitionSize(d.client, qm.Bucket, qm.Prefix+date)
 		log.DefaultLogger.Info("S3 object info", "time", currentRoundTime.Format(layout), "size", size)
 		times = append(times, current)
 		values = append(values, size)
