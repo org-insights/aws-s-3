@@ -29,7 +29,7 @@ export class QueryEditor extends PureComponent<Props> {
       <div className="gf-form">
         <FormField width={4} value={bucket} onChange={this.onBucketChange} label="Bucket" tooltip="Bucket name" />
         <FormField
-          width={6}
+          width={10}
           value={prefix || ''}
           onChange={this.onPrefixChange}
           label="Prefix"

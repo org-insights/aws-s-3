@@ -4,4 +4,7 @@ datasources:
   - name: aws-s3
     type: orginsights-s3-datasource
     jsonData:
+      accessKeyId: minioadmin
       endpoint: http://minio:9000
+    secureJsonData:
+      secretAccessKey: $SECRET_ACCESS_KEY

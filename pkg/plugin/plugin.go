@@ -37,7 +37,8 @@ var (
 // NewSampleDatasource creates a new datasource instance.
 func NewSampleDatasource(settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
 	type dataSourceConfig struct {
-		Endpoint string `json:"endpoint"`
+		AccessKeyId string `json:"accessKeyId"`
+		Endpoint    string `json:"endpoint"`
 	}
 	var dsConfig dataSourceConfig
 	err := json.Unmarshal(settings.JSONData, &dsConfig)
@@ -45,7 +46,13 @@ func NewSampleDatasource(settings backend.DataSourceInstanceSettings) (instancem
 		log.DefaultLogger.Warn("error marshalling", "err", err)
 		return nil, err
 	}
-	log.DefaultLogger.Info("looking for endpoint", "endpoint", dsConfig.Endpoint)
+	log.DefaultLogger.Info("Configurations", "accessKeyId", dsConfig.AccessKeyId, "endpoint", dsConfig.Endpoint)
+
+	var secureData = settings.DecryptedSecureJSONData
+	secretAccessKey, hasSecretAccessKey := secureData["secretAccessKey"]
+	if hasSecretAccessKey {
+		log.DefaultLogger.Info("Adding secretAccessKey for access key", "AccessKeyID", dsConfig.AccessKeyId)
+	}
 
 	customResolver := aws.EndpointResolverFunc(func(service, region string) (aws.Endpoint, error) {
 		return aws.Endpoint{
@@ -58,7 +65,7 @@ func NewSampleDatasource(settings backend.DataSourceInstanceSettings) (instancem
 	cfg, err := config.LoadDefaultConfig(
 		context.TODO(),
 		config.WithEndpointResolver(customResolver),
-		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider("minioadmin", "minioadmin", "minioadmin")))
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(dsConfig.AccessKeyId, secretAccessKey, "")))
 	if err != nil {
 		log.DefaultLogger.Error("NewSampleDatasource called", "err", err)
 	}

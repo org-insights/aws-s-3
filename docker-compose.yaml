@@ -8,6 +8,7 @@ services:
     - GF_PATHS_PLUGINS=/var/lib/grafana/plugins
     - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=orginsights-s3-datasource
     - GF_PLUGINS_ENABLE_ALPHA=true
+    - SECRET_ACCESS_KEY=minioadmin
     volumes:
     - /Users/itay/private/plugins:/var/lib/grafana/plugins
     - ./docker/config/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml

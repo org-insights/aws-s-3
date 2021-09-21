@@ -10,11 +10,11 @@ interface Props extends DataSourcePluginOptionsEditorProps<MyDataSourceOptions> 
 interface State {}
 
 export class ConfigEditor extends PureComponent<Props, State> {
-  onPathChange = (event: ChangeEvent<HTMLInputElement>) => {
+  onAccessKeyIdChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { onOptionsChange, options } = this.props;
     const jsonData = {
       ...options.jsonData,
-      path: event.target.value,
+      accessKeyId: event.target.value,
     };
     onOptionsChange({ ...options, jsonData });
   };
@@ -29,27 +29,27 @@ export class ConfigEditor extends PureComponent<Props, State> {
   };
 
   // Secure field (only sent to the backend)
-  onAPIKeyChange = (event: ChangeEvent<HTMLInputElement>) => {
+  onSecretAccessKeyChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { onOptionsChange, options } = this.props;
     onOptionsChange({
       ...options,
       secureJsonData: {
-        apiKey: event.target.value,
+        secretAccessKey: event.target.value,
       },
     });
   };
 
-  onResetAPIKey = () => {
+  onResetSecretAccessKey = () => {
     const { onOptionsChange, options } = this.props;
     onOptionsChange({
       ...options,
       secureJsonFields: {
         ...options.secureJsonFields,
-        apiKey: false,
+        secretAccessKey: false,
       },
       secureJsonData: {
         ...options.secureJsonData,
-        apiKey: '',
+        secretAccessKey: '',
       },
     });
   };
@@ -63,23 +63,12 @@ export class ConfigEditor extends PureComponent<Props, State> {
       <div className="gf-form-group">
         <div className="gf-form">
           <FormField
-            label="Endpoint"
-            labelWidth={6}
+            label="Access Key ID"
+            labelWidth={8}
             inputWidth={20}
-            onChange={this.onEndpointChange}
-            value={jsonData.endpoint || ''}
-            placeholder="URL endpoint to make API calls to"
-          />
-        </div>
-
-        <div className="gf-form">
-          <FormField
-            label="Path"
-            labelWidth={6}
-            inputWidth={20}
-            onChange={this.onPathChange}
-            value={jsonData.path || ''}
-            placeholder="json field returned to frontend"
+            onChange={this.onAccessKeyIdChange}
+            value={jsonData.accessKeyId || ''}
+            placeholder="Access Key ID"
           />
         </div>
 
@@ -87,15 +76,25 @@ export class ConfigEditor extends PureComponent<Props, State> {
           <div className="gf-form">
             <SecretFormField
               isConfigured={(secureJsonFields && secureJsonFields.apiKey) as boolean}
-              value={secureJsonData.apiKey || ''}
-              label="API Key"
-              placeholder="secure json field (backend only)"
-              labelWidth={6}
+              value={secureJsonData.secretAccessKey || ''}
+              label="Secret Access Key"
+              placeholder="Enter Secret Access Key"
+              labelWidth={8}
               inputWidth={20}
-              onReset={this.onResetAPIKey}
-              onChange={this.onAPIKeyChange}
+              onReset={this.onResetSecretAccessKey}
+              onChange={this.onSecretAccessKeyChange}
             />
           </div>
+        </div>
+        <div className="gf-form">
+          <FormField
+            label="Endpoint"
+            labelWidth={8}
+            inputWidth={20}
+            onChange={this.onEndpointChange}
+            value={jsonData.endpoint || ''}
+            placeholder="URL endpoint to make API calls to"
+          />
         </div>
       </div>
     );
