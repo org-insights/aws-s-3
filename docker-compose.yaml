@@ -10,7 +10,7 @@ services:
     - GF_PLUGINS_ENABLE_ALPHA=true
     - SECRET_ACCESS_KEY=minioadmin
     volumes:
-    - /Users/itay/private/plugins:/var/lib/grafana/plugins
+    - ./dist:/var/lib/grafana/plugins/aws-s-3/dist
     - ./docker/config/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml
     - ./docker/config/dashboard.yml:/etc/grafana/provisioning/dashboards/dashboard.yml
     - ./docker/config/dashboard.json:/etc/grafana/provisioning/dashboards/dashboard.json
