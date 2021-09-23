@@ -34,17 +34,18 @@ var (
 	_ instancemgmt.InstanceDisposer = (*SampleDatasource)(nil)
 )
 
+type dataSourceConfig struct {
+	AuthenticationProvider int `json:"authenticationProvider"`
+	AccessKeyId string `json:"accessKeyId"`
+	Endpoint    string `json:"endpoint"`
+}
+
 // NewSampleDatasource creates a new datasource instance.
 func NewSampleDatasource(settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
 	var awsConfig aws.Config
 	var credentialsProviderFunc config.LoadOptionsFunc
 	var endpointResolverFunc config.LoadOptionsFunc
 
-	type dataSourceConfig struct {
-		AuthenticationProvider int `json:"authenticationProvider"`
-		AccessKeyId string `json:"accessKeyId"`
-		Endpoint    string `json:"endpoint"`
-	}
 	var dsConfig dataSourceConfig
 	err := json.Unmarshal(settings.JSONData, &dsConfig)
 	if err != nil {
@@ -53,16 +54,7 @@ func NewSampleDatasource(settings backend.DataSourceInstanceSettings) (instancem
 	}
 	log.DefaultLogger.Info("Configurations", "authenticationProvider", dsConfig.AuthenticationProvider, "endpoint", dsConfig.Endpoint)
 
-	if dsConfig.AuthenticationProvider == 1 {
-		var secureData = settings.DecryptedSecureJSONData
-		secretAccessKey, hasSecretAccessKey := secureData["secretAccessKey"]
-		if hasSecretAccessKey {
-			log.DefaultLogger.Info("Adding secretAccessKey for access key", "AccessKeyID", dsConfig.AccessKeyId)
-		}
-		credentialsProviderFunc = config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(dsConfig.AccessKeyId, secretAccessKey, ""))
-	} else {
-		credentialsProviderFunc = DummyLoadOptionsFunc()
-	}
+	credentialsProviderFunc = getCredentialsProviderFunc(dsConfig, settings.DecryptedSecureJSONData)
 
 	if len(dsConfig.Endpoint) > 0 {
 		customResolver := aws.EndpointResolverFunc(func(service, region string) (aws.Endpoint, error) {
@@ -95,6 +87,17 @@ func NewSampleDatasource(settings backend.DataSourceInstanceSettings) (instancem
 	return &SampleDatasource{
 		client: client,
 	}, nil
+}
+
+func getCredentialsProviderFunc(dsConfig dataSourceConfig, secureData map[string]string) config.LoadOptionsFunc {
+	if dsConfig.AuthenticationProvider == 1 {
+		secretAccessKey, hasSecretAccessKey := secureData["secretAccessKey"]
+		if hasSecretAccessKey {
+			log.DefaultLogger.Info("Adding secretAccessKey for access key", "AccessKeyID", dsConfig.AccessKeyId)
+		}
+		return config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(dsConfig.AccessKeyId, secretAccessKey, ""))
+	}
+	return DummyLoadOptionsFunc()
 }
 
 func DummyLoadOptionsFunc() config.LoadOptionsFunc {

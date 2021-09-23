@@ -1,7 +1,7 @@
 import { defaults } from 'lodash';
 
 import React, { ChangeEvent, PureComponent } from 'react';
-import { LegacyForms } from '@grafana/ui';
+import { InlineField, Input, LegacyForms } from '@grafana/ui';
 import { QueryEditorProps } from '@grafana/data';
 import { DataSource } from './datasource';
 import { defaultQuery, MyDataSourceOptions, MyQuery } from './types';
@@ -28,13 +28,9 @@ export class QueryEditor extends PureComponent<Props> {
     return (
       <div className="gf-form">
         <FormField width={4} value={bucket} onChange={this.onBucketChange} label="Bucket" tooltip="Bucket name" />
-        <FormField
-          width={10}
-          value={prefix || ''}
-          onChange={this.onPrefixChange}
-          label="Prefix"
-          tooltip="Prefix path in bucket"
-        />
+        <InlineField label="Prefix" tooltip="Prefix path in bucket" grow>
+          <Input placeholder="Inline input" css={undefined} value={prefix || ''} onChange={this.onPrefixChange} />
+        </InlineField>
       </div>
     );
   }
