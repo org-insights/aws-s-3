@@ -1,7 +1,7 @@
 {
   "name": "orginsights-s3-datasource",
   "version": "1.0.0",
-  "description": "S3 data analysis",
+  "description": "Data source for AWS S3 and compatible storage services",
   "scripts": {
     "build": "grafana-toolkit plugin:build",
     "test": "grafana-toolkit plugin:test",

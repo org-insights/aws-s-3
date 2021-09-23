@@ -9,13 +9,14 @@ services:
     - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=orginsights-s3-datasource
     - GF_PLUGINS_ENABLE_ALPHA=true
     - SECRET_ACCESS_KEY=minioadmin
+    - GF_SERVER_HTTP_PORT=80
     volumes:
     - ./dist:/var/lib/grafana/plugins/aws-s-3/dist
     - ./docker/config/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml
     - ./docker/config/dashboard.yml:/etc/grafana/provisioning/dashboards/dashboard.yml
     - ./docker/config/dashboard.json:/etc/grafana/provisioning/dashboards/dashboard.json
     ports:
-    - "3000:3000"
+    - "3000:80"
   minio-init:
     image: minio/mc
     environment:

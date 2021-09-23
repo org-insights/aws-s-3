@@ -14,6 +14,7 @@ export const defaultQuery: Partial<MyQuery> = {
  * These are options configured for each DataSource instance.
  */
 export interface MyDataSourceOptions extends DataSourceJsonData {
+  authenticationProvider: number;
   accessKeyId?: string;
   endpoint?: string;
 }

@@ -1,15 +1,30 @@
 import React, { ChangeEvent, PureComponent } from 'react';
-import { LegacyForms } from '@grafana/ui';
-import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
+import { InlineField, LegacyForms, Select } from '@grafana/ui';
+import { DataSourcePluginOptionsEditorProps, SelectableValue } from '@grafana/data';
 import { MyDataSourceOptions, MySecureJsonData } from './types';
 
 const { SecretFormField, FormField } = LegacyForms;
+
+const authOptions = [
+  { label: 'AWS SDK Default', value: 0, description: 'Authentication with Assume Role' },
+  { label: 'Acess & Secret Keys', value: 1, description: 'Authentication with Access Key ID and Secret Access Key' },
+];
 
 interface Props extends DataSourcePluginOptionsEditorProps<MyDataSourceOptions> {}
 
 interface State {}
 
 export class ConfigEditor extends PureComponent<Props, State> {
+  onAuthenticationProviderChange = (event: SelectableValue<number>) => {
+    const { onOptionsChange, options } = this.props;
+    const jsonData = {
+      ...options.jsonData,
+      authenticationProvider: event.value || 0,
+    };
+    console.log(event.value);
+    onOptionsChange({ ...options, jsonData });
+  };
+
   onAccessKeyIdChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { onOptionsChange, options } = this.props;
     const jsonData = {
@@ -62,38 +77,55 @@ export class ConfigEditor extends PureComponent<Props, State> {
     return (
       <div className="gf-form-group">
         <div className="gf-form">
-          <FormField
-            label="Access Key ID"
-            labelWidth={8}
-            inputWidth={20}
-            onChange={this.onAccessKeyIdChange}
-            value={jsonData.accessKeyId || ''}
-            placeholder="Access Key ID"
-          />
+          <InlineField label="Authentication Provider" labelWidth={20}>
+            <Select
+              options={authOptions}
+              width={40}
+              value={jsonData.authenticationProvider}
+              allowCustomValue
+              onChange={this.onAuthenticationProviderChange}
+            />
+          </InlineField>
         </div>
 
-        <div className="gf-form-inline">
-          <div className="gf-form">
-            <SecretFormField
-              isConfigured={(secureJsonFields && secureJsonFields.apiKey) as boolean}
-              value={secureJsonData.secretAccessKey || ''}
-              label="Secret Access Key"
-              placeholder="Enter Secret Access Key"
-              labelWidth={8}
-              inputWidth={20}
-              onReset={this.onResetSecretAccessKey}
-              onChange={this.onSecretAccessKeyChange}
-            />
-          </div>
-        </div>
+        {jsonData.authenticationProvider === 1
+          ? [
+              <div className="gf-form">
+                <FormField
+                  label="Access Key ID"
+                  labelWidth={10}
+                  inputWidth={20}
+                  onChange={this.onAccessKeyIdChange}
+                  value={jsonData.accessKeyId || ''}
+                  placeholder="Access Key ID"
+                />
+              </div>,
+
+              <div className="gf-form-inline">
+                <div className="gf-form">
+                  <SecretFormField
+                    isConfigured={(secureJsonFields && secureJsonFields.apiKey) as boolean}
+                    value={secureJsonData.secretAccessKey || ''}
+                    label="Secret Access Key"
+                    placeholder="Enter Secret Access Key"
+                    labelWidth={10}
+                    inputWidth={20}
+                    onReset={this.onResetSecretAccessKey}
+                    onChange={this.onSecretAccessKeyChange}
+                  />
+                </div>
+              </div>,
+            ]
+          : null}
+
         <div className="gf-form">
           <FormField
             label="Endpoint"
-            labelWidth={8}
+            labelWidth={10}
             inputWidth={20}
             onChange={this.onEndpointChange}
             value={jsonData.endpoint || ''}
-            placeholder="URL endpoint to make API calls to"
+            placeholder="Optionally, specify a custom endpoint for S3"
           />
         </div>
       </div>

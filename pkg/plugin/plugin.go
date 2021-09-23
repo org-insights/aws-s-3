@@ -36,7 +36,12 @@ var (
 
 // NewSampleDatasource creates a new datasource instance.
 func NewSampleDatasource(settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
+	var awsConfig aws.Config
+	var credentialsProviderFunc config.LoadOptionsFunc
+	var endpointResolverFunc config.LoadOptionsFunc
+
 	type dataSourceConfig struct {
+		AuthenticationProvider int `json:"authenticationProvider"`
 		AccessKeyId string `json:"accessKeyId"`
 		Endpoint    string `json:"endpoint"`
 	}
@@ -46,38 +51,56 @@ func NewSampleDatasource(settings backend.DataSourceInstanceSettings) (instancem
 		log.DefaultLogger.Warn("error marshalling", "err", err)
 		return nil, err
 	}
-	log.DefaultLogger.Info("Configurations", "accessKeyId", dsConfig.AccessKeyId, "endpoint", dsConfig.Endpoint)
+	log.DefaultLogger.Info("Configurations", "authenticationProvider", dsConfig.AuthenticationProvider, "endpoint", dsConfig.Endpoint)
 
-	var secureData = settings.DecryptedSecureJSONData
-	secretAccessKey, hasSecretAccessKey := secureData["secretAccessKey"]
-	if hasSecretAccessKey {
-		log.DefaultLogger.Info("Adding secretAccessKey for access key", "AccessKeyID", dsConfig.AccessKeyId)
+	if dsConfig.AuthenticationProvider == 1 {
+		var secureData = settings.DecryptedSecureJSONData
+		secretAccessKey, hasSecretAccessKey := secureData["secretAccessKey"]
+		if hasSecretAccessKey {
+			log.DefaultLogger.Info("Adding secretAccessKey for access key", "AccessKeyID", dsConfig.AccessKeyId)
+		}
+		credentialsProviderFunc = config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(dsConfig.AccessKeyId, secretAccessKey, ""))
+	} else {
+		credentialsProviderFunc = DummyLoadOptionsFunc()
 	}
 
-	customResolver := aws.EndpointResolverFunc(func(service, region string) (aws.Endpoint, error) {
-		return aws.Endpoint{
-			URL:               dsConfig.Endpoint,
-			HostnameImmutable: true,
-		}, nil
-	})
+	if len(dsConfig.Endpoint) > 0 {
+		customResolver := aws.EndpointResolverFunc(func(service, region string) (aws.Endpoint, error) {
+			return aws.Endpoint{
+				URL:               dsConfig.Endpoint,
+				HostnameImmutable: true,
+			}, nil
+		})
+
+		endpointResolverFunc = config.WithEndpointResolver(customResolver)
+	} else {
+		endpointResolverFunc = DummyLoadOptionsFunc()
+	}
 
 	// Load the Shared AWS Configuration (~/.aws/config)
-	cfg, err := config.LoadDefaultConfig(
+	awsConfig, err = config.LoadDefaultConfig(
 		context.TODO(),
-		config.WithEndpointResolver(customResolver),
-		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(dsConfig.AccessKeyId, secretAccessKey, "")))
+		endpointResolverFunc,
+		credentialsProviderFunc,
+	)
 	if err != nil {
 		log.DefaultLogger.Error("NewSampleDatasource called", "err", err)
 	}
 
 	log.DefaultLogger.Info("Create an Amazon S3 service client")
 	// Create an Amazon S3 service client
-	client := s3.NewFromConfig(cfg)
+	client := s3.NewFromConfig(awsConfig)
 	log.DefaultLogger.Info("Amazon S3 service client created successfully")
 
 	return &SampleDatasource{
 		client: client,
 	}, nil
+}
+
+func DummyLoadOptionsFunc() config.LoadOptionsFunc {
+	return func(o *config.LoadOptions) error {
+		return nil
+	}
 }
 
 // SampleDatasource is an example datasource which can respond to data queries, reports
