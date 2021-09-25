@@ -188,13 +188,14 @@ func (d *SampleDatasource) query(_ context.Context, pCtx backend.PluginContext, 
 	times := []time.Time{}
 	values := []int64{}
 
+	granularity := parseGranularityInMinutes(qm.Prefix)
 	for query.TimeRange.To.After(current) {
 		parsedPrefix := parsePrefix(qm.Prefix, current)
 		size := getPartitionSize(d.client, qm.Bucket, parsedPrefix)
 		log.DefaultLogger.Info("S3 object info", "prefix", parsedPrefix, "size", size)
 		times = append(times, current)
 		values = append(values, size)
-		current = current.Add(24 * time.Hour)
+		current = current.Add(time.Duration(granularity) * time.Minute)
 	}
 
 	// add fields.
@@ -219,6 +220,25 @@ func (d *SampleDatasource) query(_ context.Context, pCtx backend.PluginContext, 
 	response.Frames = append(response.Frames, frame)
 
 	return response
+}
+
+func parseGranularityInMinutes(input string) int{
+	minGranularity := 60 * 24  // Day in minutes
+	var oddIndex int = 1
+	if strings.HasPrefix(input, "<") {
+		oddIndex=0
+	}
+	splited := splitPrefix(input)
+	for i := 0; i < len(splited); i++ {
+		if i%2 == oddIndex {
+			if strings.Contains(splited[i], "hh") && minGranularity > 60 {
+				minGranularity = 60
+			} else if strings.Contains(splited[i], "mm") && minGranularity > 1 {
+				minGranularity = 1
+			}
+		}
+	}
+	return minGranularity
 }
 
 func parsePrefix(input string, current time.Time) string{
