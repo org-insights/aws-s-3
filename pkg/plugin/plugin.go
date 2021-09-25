@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -187,17 +188,10 @@ func (d *SampleDatasource) query(_ context.Context, pCtx backend.PluginContext, 
 	times := []time.Time{}
 	values := []int64{}
 
-	layout := "2006-01-02" // yyyy-mm-dd
-
 	for query.TimeRange.To.After(current) {
-		currentRoundStringTime := current.Format(layout)
-		currentRoundTime, err := time.Parse(layout, currentRoundStringTime)
-		if err != nil {
-			log.DefaultLogger.Error("%s", err)
-		}
-		date := currentRoundTime.Format(layout)
-		size := getPartitionSize(d.client, qm.Bucket, qm.Prefix+date)
-		log.DefaultLogger.Info("S3 object info", "time", currentRoundTime.Format(layout), "size", size)
+		parsedPrefix := parsePrefix(qm.Prefix, current)
+		size := getPartitionSize(d.client, qm.Bucket, parsedPrefix)
+		log.DefaultLogger.Info("S3 object info", "prefix", parsedPrefix, "size", size)
 		times = append(times, current)
 		values = append(values, size)
 		current = current.Add(24 * time.Hour)
@@ -227,6 +221,59 @@ func (d *SampleDatasource) query(_ context.Context, pCtx backend.PluginContext, 
 	return response
 }
 
+func parsePrefix(input string, current time.Time) string{
+	var oddIndex int = 1
+	if strings.HasPrefix(input, "<") {
+		oddIndex=0
+	}
+	splited := splitPrefix(input)
+	for i := 0; i < len(splited); i++ {
+		if i%2 == oddIndex {
+			splited[i] = parseTime(current, splited[i])
+		}
+	}
+	return strings.Join(splited, "")
+}
+
+
+func parseTime(date time.Time, format string) string {
+	// example: MM/dd/yyyy HH:mm
+	// golang works with
+	if strings.Contains(format, "yyyy") {
+		format = strings.Replace(format, "yyyy", "2006", -1)
+	} else if strings.Contains(format, "yyy") {
+		format = strings.Replace(format, "yyy", "006", -1)
+	} else if strings.Contains(format, "yy") {
+		format = strings.Replace(format, "yy", "06", -1)
+	}
+
+	if strings.Contains(format, "MM") {
+		format = strings.Replace(format, "MM", "01", -1)
+	} else if strings.Contains(format, "M") {
+		format = strings.Replace(format, "M", "1", -1)
+	}
+
+	if strings.Contains(format, "dd") {
+		format = strings.Replace(format, "dd", "02", -1)
+	} else if strings.Contains(format, "d") {
+		format = strings.Replace(format, "d", "2", -1)
+	}
+
+	if strings.Contains(format, "hh") {
+		format = strings.Replace(format, "hh", "15", -1)
+	} else if strings.Contains(format, "h") {
+		format = strings.Replace(format, "h", "1", -1)
+	}
+
+	if strings.Contains(format, "mm") {
+		format = strings.Replace(format, "mm", "04", -1)
+	} else if strings.Contains(format, "m") {
+		format = strings.Replace(format, "m", "4", -1)
+	}
+
+	return date.Format(format)
+}
+
 // CheckHealth handles health checks sent from Grafana to the plugin.
 // The main use case for these health checks is the test button on the
 // datasource configuration page which allows users to verify that
@@ -246,6 +293,14 @@ func (d *SampleDatasource) CheckHealth(_ context.Context, req *backend.CheckHeal
 		Status:  status,
 		Message: message,
 	}, nil
+}
+
+func split(r rune) bool {
+    return r == '<' || r == '>'
+}
+
+func splitPrefix(prefix string) []string {
+	return strings.FieldsFunc(prefix, split)
 }
 
 // SubscribeStream is called when a client wants to connect to a stream. This callback

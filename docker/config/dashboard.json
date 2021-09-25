@@ -21,6 +21,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
+  "iteration": 1632570536449,
   "links": [],
   "panels": [
     {
@@ -97,7 +98,7 @@
         {
           "bucket": "my-bucket",
           "constant": 6.5,
-          "prefix": "client=$client/date=",
+          "prefix": "client=$client/date=<yyyy-MM-dd>",
           "refId": "A",
           "withStreaming": false
         }
@@ -106,7 +107,7 @@
       "type": "timeseries"
     }
   ],
-  "refresh": "",
+  "refresh": false,
   "schemaVersion": 30,
   "style": "dark",
   "tags": [],
@@ -145,8 +146,8 @@
     ]
   },
   "time": {
-    "from": "now-30d",
-    "to": "now"
+    "from": "2021-07-31T21:00:00.000Z",
+    "to": "2021-09-30T20:59:59.000Z"
   },
   "timepicker": {},
   "timezone": "",
