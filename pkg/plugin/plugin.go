@@ -36,9 +36,9 @@ var (
 )
 
 type dataSourceConfig struct {
-	AuthenticationProvider int `json:"authenticationProvider"`
-	AccessKeyId string `json:"accessKeyId"`
-	Endpoint    string `json:"endpoint"`
+	AuthenticationProvider int    `json:"authenticationProvider"`
+	AccessKeyId            string `json:"accessKeyId"`
+	Endpoint               string `json:"endpoint"`
 }
 
 // NewSampleDatasource creates a new datasource instance.
@@ -144,7 +144,6 @@ func (d *SampleDatasource) QueryData(ctx context.Context, req *backend.QueryData
 
 func getPartitionSize(client *s3.Client, bucket string, prefix string) int64 {
 	// TODO: pagination support, currently limited to 1,000 keys per call
-	log.DefaultLogger.Info("getPartitionSize called")
 	size := int64(0)
 	output, err := client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
 		Bucket: aws.String(bucket),
@@ -169,6 +168,14 @@ type queryModel struct {
 	WithStreaming bool   `json:"withStreaming"`
 }
 
+type aggrData struct {
+	Timestamp 	time.Time
+	Day   		int
+	Month 		time.Month
+	Year  		int
+	Size  		int64
+}
+
 func (d *SampleDatasource) query(_ context.Context, pCtx backend.PluginContext, query backend.DataQuery) backend.DataResponse {
 	response := backend.DataResponse{}
 
@@ -189,14 +196,32 @@ func (d *SampleDatasource) query(_ context.Context, pCtx backend.PluginContext, 
 	values := []int64{}
 
 	granularity := parseGranularityInMinutes(qm.Prefix)
+
+	var currentDate aggrData
+	currentDate.Timestamp = current
+	currentDate.Day = current.Day()
+	currentDate.Month = current.Month()
+	currentDate.Year = current.Year()
+	currentDate.Size = 0
+
 	for query.TimeRange.To.After(current) {
 		parsedPrefix := parsePrefix(qm.Prefix, current)
 		size := getPartitionSize(d.client, qm.Bucket, parsedPrefix)
-		log.DefaultLogger.Info("S3 object info", "prefix", parsedPrefix, "size", size)
-		times = append(times, current)
-		values = append(values, size)
+		if current.Day() == currentDate.Day && current.Month() == currentDate.Month && current.Year() == currentDate.Year {
+			currentDate.Size += size
+		} else {
+			times = append(times, currentDate.Timestamp)
+			values = append(values, currentDate.Size)
+			currentDate.Timestamp = current
+			currentDate.Day = current.Day()
+			currentDate.Month = current.Month()
+			currentDate.Year = current.Year()
+			currentDate.Size = size
+		}
+
 		current = current.Add(time.Duration(granularity) * time.Minute)
 	}
+	// TODO: add last currentDate
 
 	// add fields.
 	frame.Fields = append(frame.Fields,
@@ -222,11 +247,11 @@ func (d *SampleDatasource) query(_ context.Context, pCtx backend.PluginContext, 
 	return response
 }
 
-func parseGranularityInMinutes(input string) int{
-	minGranularity := 60 * 24  // Day in minutes
+func parseGranularityInMinutes(input string) int {
+	minGranularity := 60 * 24 // Day in minutes
 	var oddIndex int = 1
 	if strings.HasPrefix(input, "<") {
-		oddIndex=0
+		oddIndex = 0
 	}
 	splited := splitPrefix(input)
 	for i := 0; i < len(splited); i++ {
@@ -241,10 +266,10 @@ func parseGranularityInMinutes(input string) int{
 	return minGranularity
 }
 
-func parsePrefix(input string, current time.Time) string{
+func parsePrefix(input string, current time.Time) string {
 	var oddIndex int = 1
 	if strings.HasPrefix(input, "<") {
-		oddIndex=0
+		oddIndex = 0
 	}
 	splited := splitPrefix(input)
 	for i := 0; i < len(splited); i++ {
@@ -254,7 +279,6 @@ func parsePrefix(input string, current time.Time) string{
 	}
 	return strings.Join(splited, "")
 }
-
 
 func parseTime(date time.Time, format string) string {
 	// example: MM/dd/yyyy HH:mm
@@ -316,7 +340,7 @@ func (d *SampleDatasource) CheckHealth(_ context.Context, req *backend.CheckHeal
 }
 
 func split(r rune) bool {
-    return r == '<' || r == '>'
+	return r == '<' || r == '>'
 }
 
 func splitPrefix(prefix string) []string {
