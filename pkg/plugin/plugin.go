@@ -304,9 +304,9 @@ func parseTime(date time.Time, format string) string {
 	}
 
 	if strings.Contains(format, "hh") {
-		format = strings.Replace(format, "hh", "15", -1)
+		format = strings.Replace(format, "hh", "03", -1)
 	} else if strings.Contains(format, "h") {
-		format = strings.Replace(format, "h", "1", -1)
+		format = strings.Replace(format, "h", "3", -1)
 	}
 
 	if strings.Contains(format, "mm") {
