@@ -30,7 +30,12 @@
         "url": "https://github.com/grafana/grafana-starter-datasource-backend/blob/master/LICENSE"
       }
     ],
-    "screenshots": [],
+    "screenshots": [
+      {
+        "name": "S3 Data source configurations",
+        "path": "screenshots/datasource-configurations.png"
+      }
+    ],
     "version": "%VERSION%",
     "updated": "%TODAY%"
   },
