@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/master/docs/sources/developers/plugins/plugin.schema.json",
   "type": "datasource",
   "name": "aws-s3",
-  "id": "orginsights-s3-datasource",
+  "id": "itay-s3-datasource",
   "metrics": true,
   "backend": true,
   "executable": "gpx_aws-s3",
