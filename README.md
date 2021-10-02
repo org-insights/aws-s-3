@@ -36,13 +36,12 @@ It will help you to ensure that there is nothing missing and detect anomalies.
 
 ## Getting started
 
-S3 data source consists of both frontend and backend components.
+You can run end-to-end example with Grafana and [minio](https://min.io/) (as S3 compatible object storage): 
 
-1. Install dependencies
+1. Run the following command in your terminal:
 
    ```bash
-   yarn install
-   yarn build
-   mage -v
    docker-compose up
    ```
+
+2. Open your browser and go to: http://localhost:3000/
