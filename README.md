@@ -46,7 +46,7 @@ You can run end-to-end example with Grafana and [minio](https://min.io/) (as S3 
 
 2. Open your browser and go to: http://localhost:3000/
 
-# Templating
+## Templating
 S3 Data source supports Date/Time formats such as:
 - Year is represented by 2-4 y digits: `yyyy`, `yyy` or `yy`.
 - Month is represented by 1-2 M digits: `MM` or `M`.
