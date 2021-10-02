@@ -45,3 +45,14 @@ You can run end-to-end example with Grafana and [minio](https://min.io/) (as S3 
    ```
 
 2. Open your browser and go to: http://localhost:3000/
+
+
+## Screenshots
+
+- **Data source**: Overview of data source configurations.
+
+  ![Data source](https://raw.githubusercontent.com/org-insights/aws-s-3/master/src/screenshots/datasource-configurations.png)
+
+- **Dashboard example**: Overview of graph panel configurations.
+
+  ![Data source](https://raw.githubusercontent.com/org-insights/aws-s-3/master/src/screenshots/dashboard-example-1.png)
