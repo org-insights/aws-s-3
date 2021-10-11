@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"reflect"
 	"testing"
 	"time"
 )
@@ -29,6 +30,25 @@ func TestParseTime(t *testing.T) {
 		actual := parseTime(testCase.t, testCase.format)
 		if actual != testCase.expected {
 			t.Errorf("parseTime(%s, %s): expected %s, actual %s", testCase.t, testCase.format, testCase.expected, actual)
+		}
+	}
+}
+
+var splitPrefixTests = []struct {
+	prefix   string   	// format input
+	expected []string	// expected result
+}{
+	{"client=1000/<yyyy-MM-dd>", []string{"client=1000/", "yyyy-MM-dd"}},
+	{"client=1000/<yyyy-MM-dd>/hour=<hh>", []string{"client=1000/", "yyyy-MM-dd", "/hour=", "hh"}},
+	{"<yyyy-MM-dd>/client=1000/hour=<hh>", []string{"yyyy-MM-dd", "/client=1000/hour=", "hh"}},
+}
+
+
+func TestSplitPrefix(t *testing.T) {
+	for _, testCase := range splitPrefixTests {
+		actual := splitPrefix(testCase.prefix)
+		if !reflect.DeepEqual(testCase.expected, actual) {
+			t.Errorf("splitPrefix(%s): expected %s, actual %s", testCase.prefix, testCase.expected, actual)
 		}
 	}
 }
