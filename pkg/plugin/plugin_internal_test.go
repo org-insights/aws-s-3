@@ -35,20 +35,59 @@ func TestParseTime(t *testing.T) {
 }
 
 var splitPrefixTests = []struct {
-	prefix   string   	// format input
-	expected []string	// expected result
+	prefix   string   // format input
+	expected []string // expected result
 }{
 	{"client=1000/<yyyy-MM-dd>", []string{"client=1000/", "yyyy-MM-dd"}},
 	{"client=1000/<yyyy-MM-dd>/hour=<hh>", []string{"client=1000/", "yyyy-MM-dd", "/hour=", "hh"}},
-	{"<yyyy-MM-dd>/client=1000/hour=<hh>", []string{"yyyy-MM-dd", "/client=1000/hour=", "hh"}},
+	{"<yyyy-MM-dd>/client=1000/hour=<hh-mm>", []string{"yyyy-MM-dd", "/client=1000/hour=", "hh-mm"}},
 }
-
 
 func TestSplitPrefix(t *testing.T) {
 	for _, testCase := range splitPrefixTests {
 		actual := splitPrefix(testCase.prefix)
 		if !reflect.DeepEqual(testCase.expected, actual) {
 			t.Errorf("splitPrefix(%s): expected %s, actual %s", testCase.prefix, testCase.expected, actual)
+		}
+	}
+}
+
+var parseGranularityInMinutesTests = []struct {
+	prefix   string // format input
+	expected int    // expected result
+}{
+	{"client=1000/<yyyy-MM-dd>", 60 * 24}, // Day in minutes
+	{"client=1000/<yyyy-MM-dd>/hour=<hh>", 60},
+	{"<yyyy-MM-dd>/client=1000/hour=<hh-mm>", 1},
+}
+
+func TestParseGranularityInMinutes(t *testing.T) {
+	for _, testCase := range parseGranularityInMinutesTests {
+		actual := parseGranularityInMinutes(testCase.prefix)
+		if testCase.expected != actual {
+			t.Errorf("parseGranularityInMinutes(%s): expected %d, actual %d", testCase.prefix, testCase.expected, actual)
+		}
+	}
+}
+
+var parsePrefixTests = []struct {
+	prefix   string // format input
+	expected string // expected result
+}{
+	{"client=1000/<yyyy-MM-dd>", "client=1000/2021-10-30"},
+	{"client=1000/<yyyy-MM-dd>/hour=<HH>", "client=1000/2021-10-30/hour=17"},
+	{"client=1000/<yyyy-MM-dd>/hour=<hh>", "client=1000/2021-10-30/hour=05"},
+	{"<yyyy-MM-dd>/client=1000/hour=<HH:mm>", "2021-10-30/client=1000/hour=17:40"},
+	{"<yyyy-MM-dd>/client=1000/hour=<H:mm>", "2021-10-30/client=1000/hour=17:40"},
+	{"<yyyy-MM-dd>/client=1000/hour=<hh:mm>", "2021-10-30/client=1000/hour=05:40"},
+}
+
+func TestParsePrefix(t *testing.T) {
+	currentTime := time.Date(2021, 10, 30, 17, 40, 0, 0, time.UTC)
+	for _, testCase := range parsePrefixTests {
+		actual := parsePrefix(testCase.prefix, currentTime)
+		if testCase.expected != actual {
+			t.Errorf("parseGranularityInMinutes(%s): expected %s, actual %s", testCase.prefix, testCase.expected, actual)
 		}
 	}
 }

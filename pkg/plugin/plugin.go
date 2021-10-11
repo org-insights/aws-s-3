@@ -169,11 +169,11 @@ type queryModel struct {
 }
 
 type aggrData struct {
-	Timestamp 	time.Time
-	Day   		int
-	Month 		time.Month
-	Year  		int
-	Size  		int64
+	Timestamp time.Time
+	Day       int
+	Month     time.Month
+	Year      int
+	Size      int64
 }
 
 func (d *SampleDatasource) query(_ context.Context, pCtx backend.PluginContext, query backend.DataQuery) backend.DataResponse {
@@ -256,10 +256,10 @@ func parseGranularityInMinutes(input string) int {
 	splited := splitPrefix(input)
 	for i := 0; i < len(splited); i++ {
 		if i%2 == oddIndex {
-			if strings.Contains(splited[i], "hh") && minGranularity > 60 {
-				minGranularity = 60
-			} else if strings.Contains(splited[i], "mm") && minGranularity > 1 {
+			if strings.Contains(splited[i], "mm") && minGranularity > 1 {
 				minGranularity = 1
+			} else if strings.Contains(splited[i], "hh") && minGranularity > 60 {
+				minGranularity = 60
 			}
 		}
 	}
@@ -301,6 +301,12 @@ func parseTime(date time.Time, format string) string {
 		format = strings.Replace(format, "dd", "02", -1)
 	} else if strings.Contains(format, "d") {
 		format = strings.Replace(format, "d", "2", -1)
+	}
+
+	if strings.Contains(format, "HH") {
+		format = strings.Replace(format, "HH", "15", -1)
+	} else if strings.Contains(format, "H") {
+		format = strings.Replace(format, "H", "15", -1)
 	}
 
 	if strings.Contains(format, "hh") {
