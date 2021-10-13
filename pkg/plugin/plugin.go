@@ -321,11 +321,6 @@ func (d *SampleDatasource) CheckHealth(_ context.Context, req *backend.CheckHeal
 	var status = backend.HealthStatusOk
 	var message = "Data source is working"
 
-	if rand.Int()%2 == 0 {
-		status = backend.HealthStatusError
-		message = "randomized error"
-	}
-
 	return &backend.CheckHealthResult{
 		Status:  status,
 		Message: message,
