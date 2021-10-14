@@ -3,10 +3,11 @@
 You wrote a lot of ETLs using great fancy tool like [Spark](https://spark.apache.org/), [Flink](https://flink.apache.org/) etc. A common pattern usually partitions the massive data by customer, date, hour etc. The S3 bucket's tree might looks like:
 ```
 .
-├── main.go
-├── plugin.go
-├── plugin_internal_test.go
-├── plugin_test.go
+├── client=1000
+|   ├── date=2021-09-25
+│   │   └── hour=00
+│   │       └── partition-00.data
+│   └── ...
 └── client=2000
     ├── date=2021-09-25
     │   ├── hour=00
