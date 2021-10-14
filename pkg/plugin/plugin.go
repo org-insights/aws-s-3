@@ -3,7 +3,6 @@ package plugin
 import (
 	"context"
 	"encoding/json"
-	"math/rand"
 	"strings"
 	"time"
 
@@ -141,9 +140,14 @@ func (d *SampleDatasource) QueryData(ctx context.Context, req *backend.QueryData
 	return response, nil
 }
 
-func getPartitionSize(client *s3.Client, bucket string, prefix string) int64 {
+type partitionInfo struct {
+	Size         int64
+	NumberOfKeys int64
+}
+
+func getPartitionInfo(client *s3.Client, bucket string, prefix string) partitionInfo {
 	// TODO: pagination support, currently limited to 1,000 keys per call
-	size := int64(0)
+	var info partitionInfo
 	output, err := client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
 		Bucket: aws.String(bucket),
 		Prefix: aws.String(prefix),
@@ -154,25 +158,28 @@ func getPartitionSize(client *s3.Client, bucket string, prefix string) int64 {
 
 	for _, object := range output.Contents {
 		log.DefaultLogger.Info("getPartitionSize called", "key", aws.ToString(object.Key), "size", object.Size)
-		size += object.Size
+		info.Size += object.Size
+		info.NumberOfKeys += 1
 	}
 
-	return size
+	return info
 }
 
 type queryModel struct {
 	Endpoint      string `json:"endpoint"`
 	Bucket        string `json:"bucket"`
 	Prefix        string `json:"prefix"`
+	Metric        int    `json:"metric"`
 	WithStreaming bool   `json:"withStreaming"`
 }
 
 type aggrData struct {
-	Timestamp time.Time
-	Day       int
-	Month     time.Month
-	Year      int
-	Size      int64
+	Timestamp    time.Time
+	Day          int
+	Month        time.Month
+	Year         int
+	Size         int64
+	NumberOfKeys int64
 }
 
 func (d *SampleDatasource) query(_ context.Context, pCtx backend.PluginContext, query backend.DataQuery) backend.DataResponse {
@@ -202,20 +209,27 @@ func (d *SampleDatasource) query(_ context.Context, pCtx backend.PluginContext, 
 	currentDate.Month = current.Month()
 	currentDate.Year = current.Year()
 	currentDate.Size = 0
+	currentDate.NumberOfKeys = 0
 
 	for query.TimeRange.To.After(current) {
 		parsedPrefix := parsePrefix(qm.Prefix, current)
-		size := getPartitionSize(d.client, qm.Bucket, parsedPrefix)
+		info := getPartitionInfo(d.client, qm.Bucket, parsedPrefix)
 		if current.Day() == currentDate.Day && current.Month() == currentDate.Month && current.Year() == currentDate.Year {
-			currentDate.Size += size
+			currentDate.Size += info.Size
+			currentDate.NumberOfKeys += info.NumberOfKeys
 		} else {
 			times = append(times, currentDate.Timestamp)
-			values = append(values, currentDate.Size)
+			if qm.Metric == 0 {
+				values = append(values, currentDate.Size)
+			} else {
+				values = append(values, currentDate.NumberOfKeys)
+			}
 			currentDate.Timestamp = current
 			currentDate.Day = current.Day()
 			currentDate.Month = current.Month()
 			currentDate.Year = current.Year()
-			currentDate.Size = size
+			currentDate.Size = info.Size
+			currentDate.NumberOfKeys = info.NumberOfKeys
 		}
 
 		current = current.Add(time.Duration(granularity) * time.Minute)
