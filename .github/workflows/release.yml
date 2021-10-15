@@ -72,7 +72,7 @@ jobs:
           args: buildAll
 
       - name: Sign plugin
-        run: yarn sign --rootUrls http://localhost:3000,http://localhost:80 # TODO: Remove root Urls when we go public
+        run: yarn sign --rootUrls http://localhost:3000,http://localhost:80,https://herzl.dev-use1.dynamicyield.com # TODO: Remove root Urls when we go public
         env:
           GRAFANA_API_KEY: ${{ secrets.GRAFANA_API_KEY }} # Requires a Grafana API key from Grafana.com.
 
