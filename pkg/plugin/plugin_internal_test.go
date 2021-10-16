@@ -58,7 +58,9 @@ var parseGranularityInMinutesTests = []struct {
 }{
 	{"client=1000/<yyyy-MM-dd>", 60 * 24}, // Day in minutes
 	{"client=1000/<yyyy-MM-dd>/hour=<hh>", 60},
+	{"client=1000/<yyyy-MM-dd>/hour=<HH>", 60},
 	{"<yyyy-MM-dd>/client=1000/hour=<hh-mm>", 1},
+	{"<yyyy-MM-dd>/client=1000/hour=<HH-mm>", 1},
 }
 
 func TestParseGranularityInMinutes(t *testing.T) {
@@ -87,7 +89,7 @@ func TestParsePrefix(t *testing.T) {
 	for _, testCase := range parsePrefixTests {
 		actual := parsePrefix(testCase.prefix, currentTime)
 		if testCase.expected != actual {
-			t.Errorf("parseGranularityInMinutes(%s): expected %s, actual %s", testCase.prefix, testCase.expected, actual)
+			t.Errorf("parsePrefix(%s): expected %s, actual %s", testCase.prefix, testCase.expected, actual)
 		}
 	}
 }

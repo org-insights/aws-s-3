@@ -1,7 +1,7 @@
 FROM grafana/grafana:8.1.3
 
 USER root
-ENV VERSION=1.0.1
+ENV VERSION=1.0.2
 RUN wget https://github.com/org-insights/aws-s-3/releases/download/v${VERSION}/itay-s3-datasource-${VERSION}.zip \
  -O /var/lib/grafana/plugins/itay-s3-datasource-${VERSION}.zip \
  && cd /var/lib/grafana/plugins \

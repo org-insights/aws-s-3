@@ -145,7 +145,7 @@ type partitionInfo struct {
 	NumberOfKeys int64
 }
 
-func getPartitionInfo(client *s3.Client, bucket string, prefix string) partitionInfo {
+func getPartitionInfo(client *s3.Client, bucket string, prefix string) (*partitionInfo, error) {
 	// TODO: pagination support, currently limited to 1,000 keys per call
 	var info partitionInfo
 	output, err := client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
@@ -154,15 +154,15 @@ func getPartitionInfo(client *s3.Client, bucket string, prefix string) partition
 	})
 	if err != nil {
 		log.DefaultLogger.Error("getPartitionSize called", "err", err)
+		return nil, err
 	}
 
 	for _, object := range output.Contents {
-		log.DefaultLogger.Info("getPartitionSize called", "key", aws.ToString(object.Key), "size", object.Size)
 		info.Size += object.Size
 		info.NumberOfKeys += 1
 	}
 
-	return info
+	return &info, nil
 }
 
 type queryModel struct {
@@ -213,7 +213,13 @@ func (d *SampleDatasource) query(_ context.Context, pCtx backend.PluginContext, 
 
 	for query.TimeRange.To.After(current) {
 		parsedPrefix := parsePrefix(qm.Prefix, current)
-		info := getPartitionInfo(d.client, qm.Bucket, parsedPrefix)
+		info, err := getPartitionInfo(d.client, qm.Bucket, parsedPrefix)
+		if err != nil {
+			log.DefaultLogger.Error("query called", "err", err)
+			response.Error = err
+			return response
+		}
+
 		if current.Day() == currentDate.Day && current.Month() == currentDate.Month && current.Year() == currentDate.Year {
 			currentDate.Size += info.Size
 			currentDate.NumberOfKeys += info.NumberOfKeys
@@ -259,7 +265,7 @@ func parseGranularityInMinutes(input string) int {
 		if i%2 == oddIndex {
 			if strings.Contains(splited[i], "mm") && minGranularity > 1 {
 				minGranularity = 1
-			} else if strings.Contains(splited[i], "hh") && minGranularity > 60 {
+			} else if (strings.Contains(splited[i], "h") || strings.Contains(splited[i], "H")) && minGranularity > 60 {
 				minGranularity = 60
 			}
 		}
