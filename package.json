@@ -1,6 +1,6 @@
 {
   "name": "itay-s3-datasource",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Data source for AWS S3 and compatible storage services",
   "scripts": {
     "build": "grafana-toolkit plugin:build",
