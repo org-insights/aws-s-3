@@ -22,6 +22,6 @@ npx @grafana/toolkit plugin:sign --rootUrls http://localhost:3000,http://127.0.0
 zip and test:
 ```
 mv dist itay-s3-datasource
-zip itay-s3-datasource-1.0.1.zip itay-s3-datasource -r
-~/go/bin/plugincheck ~/<path-to-this-repo>/aws-s-3/itay-s3-datasource-1.0.1.zip
+zip itay-s3-datasource-1.0.2.zip itay-s3-datasource -r
+~/go/bin/plugincheck ~/<path-to-this-repo>/aws-s-3/itay-s3-datasource-1.0.2.zip
 ```
