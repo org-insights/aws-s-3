@@ -1,9 +1,14 @@
 package plugin
 
 import (
+	"context"
+	"errors"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
 var parseTimeTests = []struct {
@@ -91,5 +96,40 @@ func TestParsePrefix(t *testing.T) {
 		if testCase.expected != actual {
 			t.Errorf("parsePrefix(%s): expected %s, actual %s", testCase.prefix, testCase.expected, actual)
 		}
+	}
+}
+
+type MockS3Client struct {
+	error bool
+}
+
+func (client* MockS3Client) ListObjectsV2(context.Context, *s3.ListObjectsV2Input, ...func(*s3.Options)) (*s3.ListObjectsV2Output, error) {
+	if client.error {
+		return nil, errors.New("mocked failure")
+	}
+	key := "some_key"
+	return &s3.ListObjectsV2Output{
+		Contents:              []types.Object{{
+				Key: &key,
+				Size: 1024,
+			},
+		},
+	}, nil
+}
+
+func TestGetPartitionInfoWithError(t *testing.T) {
+	_, err := getPartitionInfo(&MockS3Client{true}, "", "")
+	if err.Error() != "mocked failure" {
+		t.Errorf("%s", err)
+	}
+}
+
+func TestGetPartitionInfo(t *testing.T) {
+	info, err := getPartitionInfo(&MockS3Client{false}, "", "")
+	if err != nil {
+		t.Errorf("nil error expected")
+	}
+	if info == nil {
+		t.Errorf("expected info, got nil")
 	}
 }
