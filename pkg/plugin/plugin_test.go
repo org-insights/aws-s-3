@@ -11,6 +11,47 @@ import (
 	"github.com/grafana/grafana-starter-datasource-backend/pkg/plugin"
 )
 
+
+func TestNewSampleDatasourceWithoutJSON(t *testing.T) {
+	var settings backend.DataSourceInstanceSettings
+	_, err := plugin.NewSampleDatasource(settings)
+	if err == nil {
+		t.Error("expecting error due to missing JSON")
+	}
+}
+
+
+func TestNewSampleDatasource(t *testing.T) {
+	var settings backend.DataSourceInstanceSettings
+	settings.JSONData = []byte("{}")
+	_, err := plugin.NewSampleDatasource(settings)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+
+func TestNewSampleDatasourceWithCreds(t *testing.T) {
+	var settings backend.DataSourceInstanceSettings
+	settings.JSONData = []byte("{\"authenticationProvider\": 1, \"accessKeyId\": \"test_key\"}")
+	settings.DecryptedSecureJSONData = map[string]string{"secretAccessKey": "test_secret"}
+	_, err := plugin.NewSampleDatasource(settings)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+
+func TestNewSampleDatasourceWithEndpoint(t *testing.T) {
+	var settings backend.DataSourceInstanceSettings
+	settings.JSONData = []byte("{\"authenticationProvider\": 1, \"accessKeyId\": \"test_key\", \"endpoint\": \"http://localhost:9000\"}")
+	_, err := plugin.NewSampleDatasource(settings)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+
 func TestQueryDataWithError(t *testing.T) {
 	ds := plugin.SampleDatasource{}
 
@@ -52,6 +93,8 @@ func TestQueryData(t *testing.T) {
 	ds := plugin.SampleDatasource{
 		Client: &client,
 	}
+	from := 10
+	to := 19
 
 	resp, err := ds.QueryData(
 		context.Background(),
@@ -60,11 +103,11 @@ func TestQueryData(t *testing.T) {
 				{
 					RefID: "A",
 					TimeRange: backend.TimeRange{
-						From: time.Date(2021, time.Month(2), 10, 1, 10, 0, 0, time.UTC),
-						To:   time.Date(2021, time.Month(2), 19, 1, 10, 0, 0, time.UTC),
+						From: time.Date(2021, time.Month(2), from, 1, 10, 0, 0, time.UTC),
+						To:   time.Date(2021, time.Month(2), to, 1, 10, 0, 0, time.UTC),
 					},
 					Interval: 60 * 60,
-					JSON: []byte("{\"Endpoint\": \"localhost\"}"),
+					JSON: []byte("{\"Endpoint\": \"localhost\", \"Metric\": 1}"),
 				},
 			},
 		},
@@ -76,5 +119,8 @@ func TestQueryData(t *testing.T) {
 	if len(resp.Responses) != 1 {
 		t.Fatal("QueryData must return a response")
 	}
-	println(resp.Responses["A"].Frames[0].Fields[1].Name)  // TODO: compare result
+
+	if (to - from - 1) != resp.Responses["A"].Frames[0].Fields[1].Len() {
+		t.Fatal("wrong number of values")
+	}
 }
