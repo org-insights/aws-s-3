@@ -80,11 +80,11 @@ func NewSampleDatasource(settings backend.DataSourceInstanceSettings) (instancem
 
 	log.DefaultLogger.Info("Create an Amazon S3 service client")
 	// Create an Amazon S3 service client
-	client := s3.NewFromConfig(awsConfig)
+	var client s3.ListObjectsV2APIClient = s3.NewFromConfig(awsConfig)
 	log.DefaultLogger.Info("Amazon S3 service client created successfully")
 
 	return &SampleDatasource{
-		client: client,
+		Client: &client,
 	}, nil
 }
 
@@ -108,7 +108,7 @@ func DummyLoadOptionsFunc() config.LoadOptionsFunc {
 // SampleDatasource is an example datasource which can respond to data queries, reports
 // its health and has streaming skills.
 type SampleDatasource struct {
-	client *s3.Client
+	Client *s3.ListObjectsV2APIClient
 }
 
 // Dispose here tells plugin SDK that plugin wants to clean up resources when a new instance
@@ -145,7 +145,7 @@ type partitionInfo struct {
 	NumberOfKeys int64
 }
 
-func getPartitionInfo(client *s3.Client, bucket string, prefix string) (*partitionInfo, error) {
+func getPartitionInfo(client s3.ListObjectsV2APIClient, bucket string, prefix string) (*partitionInfo, error) {
 	// TODO: pagination support, currently limited to 1,000 keys per call
 	var info partitionInfo
 	output, err := client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
@@ -213,7 +213,7 @@ func (d *SampleDatasource) query(_ context.Context, pCtx backend.PluginContext, 
 
 	for query.TimeRange.To.After(current) {
 		parsedPrefix := parsePrefix(qm.Prefix, current)
-		info, err := getPartitionInfo(d.client, qm.Bucket, parsedPrefix)
+		info, err := getPartitionInfo(*d.Client, qm.Bucket, parsedPrefix)
 		if err != nil {
 			log.DefaultLogger.Error("query called", "err", err)
 			response.Error = err
